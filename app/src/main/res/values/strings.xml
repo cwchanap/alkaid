@@ -1,0 +1,30 @@
+<resources>
+    <string name="app_name">Alkaid</string>
+    <string name="title_home">Home</string>
+    <string name="title_sensors">Sensors</string>
+    <string name="title_dashboard">Dashboard</string>
+    <string name="title_settings">Settings</string>
+    
+    <!-- Sensor related strings -->
+    <string name="sensor_barometer">Barometer</string>
+    <string name="sensor_gyroscope">Gyroscope</string>
+    <string name="sensor_temperature">Temperature</string>
+    <string name="sensor_gps">GPS Location</string>
+    
+    <string name="unit_pressure">hPa</string>
+    <string name="unit_rotation">rad/s</string>
+    <string name="unit_temperature">°C</string>
+    <string name="unit_coordinates">°</string>
+    
+    <string name="sensor_loading">Loading...</string>
+    <string name="sensor_not_available">Sensor not available</string>
+    <string name="location_permission_required">Location permission required for GPS sensor</string>
+    <string name="permission_denied">Permission denied</string>
+    
+    <!-- Settings strings -->
+    <string name="settings_sensor_visibility">Sensor Visibility</string>
+    <string name="settings_show_barometer">Show Barometer</string>
+    <string name="settings_show_gyroscope">Show Gyroscope</string>
+    <string name="settings_show_temperature">Show Temperature</string>
+    <string name="settings_show_gps">Show GPS Location</string>
+</resources>
