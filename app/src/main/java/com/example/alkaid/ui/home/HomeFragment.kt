@@ -9,10 +9,14 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import com.example.alkaid.data.preferences.SensorVisibilityPreferences
+import com.example.alkaid.data.repository.AccelerometerRepository
 import com.example.alkaid.data.repository.BarometerRepository
 import com.example.alkaid.data.repository.BaseSensorRepository
 import com.example.alkaid.data.repository.GpsRepository
 import com.example.alkaid.data.repository.GyroscopeRepository
+import com.example.alkaid.data.repository.HumiditySensorRepository
+import com.example.alkaid.data.repository.LightSensorRepository
+import com.example.alkaid.data.repository.MagnetometerRepository
 import com.example.alkaid.data.repository.TemperatureRepository
 import com.example.alkaid.data.sensor.SensorType
 import com.example.alkaid.databinding.FragmentHomeBinding
@@ -55,6 +59,10 @@ class HomeFragment : Fragment() {
         sensorRepositories[SensorType.GYROSCOPE] = GyroscopeRepository(requireContext())
         sensorRepositories[SensorType.TEMPERATURE] = TemperatureRepository(requireContext())
         sensorRepositories[SensorType.GPS] = GpsRepository(requireContext())
+        sensorRepositories[SensorType.ACCELEROMETER] = AccelerometerRepository(requireContext())
+        sensorRepositories[SensorType.MAGNETOMETER] = MagnetometerRepository(requireContext())
+        sensorRepositories[SensorType.LIGHT] = LightSensorRepository(requireContext())
+        sensorRepositories[SensorType.HUMIDITY] = HumiditySensorRepository(requireContext())
     }
 
     private fun setupRecyclerView() {

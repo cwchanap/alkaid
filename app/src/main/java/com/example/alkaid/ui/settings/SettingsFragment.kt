@@ -79,6 +79,10 @@ class SettingsFragment : Fragment() {
         binding.switchGyroscope.isChecked = sensorPreferences.isSensorVisible(SensorType.GYROSCOPE)
         binding.switchTemperature.isChecked = sensorPreferences.isSensorVisible(SensorType.TEMPERATURE)
         binding.switchGps.isChecked = sensorPreferences.isSensorVisible(SensorType.GPS)
+        binding.switchAccelerometer.isChecked = sensorPreferences.isSensorVisible(SensorType.ACCELEROMETER)
+        binding.switchMagnetometer.isChecked = sensorPreferences.isSensorVisible(SensorType.MAGNETOMETER)
+        binding.switchLight.isChecked = sensorPreferences.isSensorVisible(SensorType.LIGHT)
+        binding.switchHumidity.isChecked = sensorPreferences.isSensorVisible(SensorType.HUMIDITY)
 
         // Set up switch listeners
         binding.switchBarometer.setOnCheckedChangeListener { _, isChecked ->
@@ -95,6 +99,22 @@ class SettingsFragment : Fragment() {
 
         binding.switchGps.setOnCheckedChangeListener { _, isChecked ->
             handleGpsToggle(isChecked)
+        }
+
+        binding.switchAccelerometer.setOnCheckedChangeListener { _, isChecked ->
+            sensorPreferences.setSensorVisible(SensorType.ACCELEROMETER, isChecked)
+        }
+
+        binding.switchMagnetometer.setOnCheckedChangeListener { _, isChecked ->
+            sensorPreferences.setSensorVisible(SensorType.MAGNETOMETER, isChecked)
+        }
+
+        binding.switchLight.setOnCheckedChangeListener { _, isChecked ->
+            sensorPreferences.setSensorVisible(SensorType.LIGHT, isChecked)
+        }
+
+        binding.switchHumidity.setOnCheckedChangeListener { _, isChecked ->
+            sensorPreferences.setSensorVisible(SensorType.HUMIDITY, isChecked)
         }
     }
 
@@ -186,6 +206,38 @@ class SettingsFragment : Fragment() {
             .onEach { isVisible ->
                 if (binding.switchGps.isChecked != isVisible) {
                     binding.switchGps.isChecked = isVisible
+                }
+            }
+            .launchIn(viewLifecycleOwner.lifecycleScope)
+
+        sensorPreferences.getSensorVisibilityFlow(SensorType.ACCELEROMETER)
+            .onEach { isVisible ->
+                if (binding.switchAccelerometer.isChecked != isVisible) {
+                    binding.switchAccelerometer.isChecked = isVisible
+                }
+            }
+            .launchIn(viewLifecycleOwner.lifecycleScope)
+
+        sensorPreferences.getSensorVisibilityFlow(SensorType.MAGNETOMETER)
+            .onEach { isVisible ->
+                if (binding.switchMagnetometer.isChecked != isVisible) {
+                    binding.switchMagnetometer.isChecked = isVisible
+                }
+            }
+            .launchIn(viewLifecycleOwner.lifecycleScope)
+
+        sensorPreferences.getSensorVisibilityFlow(SensorType.LIGHT)
+            .onEach { isVisible ->
+                if (binding.switchLight.isChecked != isVisible) {
+                    binding.switchLight.isChecked = isVisible
+                }
+            }
+            .launchIn(viewLifecycleOwner.lifecycleScope)
+
+        sensorPreferences.getSensorVisibilityFlow(SensorType.HUMIDITY)
+            .onEach { isVisible ->
+                if (binding.switchHumidity.isChecked != isVisible) {
+                    binding.switchHumidity.isChecked = isVisible
                 }
             }
             .launchIn(viewLifecycleOwner.lifecycleScope)

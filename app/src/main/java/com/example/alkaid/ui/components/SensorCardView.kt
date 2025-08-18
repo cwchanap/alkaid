@@ -9,7 +9,11 @@ import android.widget.TextView
 import androidx.annotation.DrawableRes
 import com.example.alkaid.R
 import com.example.alkaid.data.sensor.GyroscopeData
+import com.example.alkaid.data.sensor.AccelerometerData
+import com.example.alkaid.data.sensor.HumidityData
+import com.example.alkaid.data.sensor.LightData
 import com.example.alkaid.data.sensor.LocationData
+import com.example.alkaid.data.sensor.MagnetometerData
 import com.example.alkaid.data.sensor.SensorResult
 import com.example.alkaid.data.sensor.SensorType
 import com.google.android.material.card.MaterialCardView
@@ -47,10 +51,14 @@ class SensorCardView @JvmOverloads constructor(
         sensorTitle.text = sensorType.displayName
         
         val iconRes = when (sensorType) {
-            SensorType.BAROMETER -> R.drawable.ic_dashboard_black_24dp // Using existing icon as placeholder
-            SensorType.GYROSCOPE -> R.drawable.ic_home_black_24dp // Using existing icon as placeholder
-            SensorType.TEMPERATURE -> R.drawable.ic_notifications_black_24dp // Using existing icon as placeholder
-            SensorType.GPS -> R.drawable.ic_settings_black_24dp // Using existing icon as placeholder
+            SensorType.BAROMETER -> R.drawable.ic_dashboard_black_24dp
+            SensorType.GYROSCOPE -> R.drawable.ic_home_black_24dp
+            SensorType.TEMPERATURE -> R.drawable.ic_notifications_black_24dp
+            SensorType.GPS -> R.drawable.ic_settings_black_24dp
+            SensorType.ACCELEROMETER -> R.drawable.ic_dashboard_black_24dp
+            SensorType.MAGNETOMETER -> R.drawable.ic_home_black_24dp
+            SensorType.LIGHT -> R.drawable.ic_notifications_black_24dp
+            SensorType.HUMIDITY -> R.drawable.ic_settings_black_24dp
         }
         
         sensorIcon.setImageResource(iconRes)
@@ -84,6 +92,10 @@ class SensorCardView @JvmOverloads constructor(
             is Float -> formatFloatValue(value)
             is LocationData -> formatLocationData(value)
             is GyroscopeData -> value.getFormattedMagnitude()
+            is AccelerometerData -> value.getFormattedMagnitude()
+            is MagnetometerData -> value.getFormattedMagnitude()
+            is LightData -> value.getFormattedIlluminance()
+            is HumidityData -> value.getFormattedHumidity()
             else -> value.toString()
         }
         
