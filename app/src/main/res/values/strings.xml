@@ -3,6 +3,7 @@
     <string name="title_home">Home</string>
     <string name="title_sensors">Sensors</string>
     <string name="title_dashboard">Dashboard</string>
+    <string name="title_map">Map</string>
     <string name="title_settings">Settings</string>
     
     <!-- Sensor related strings -->
@@ -35,4 +36,12 @@
     <string name="settings_show_magnetometer">Show Magnetometer</string>
     <string name="settings_show_light">Show Light Sensor</string>
     <string name="settings_show_humidity">Show Humidity</string>
+    
+    <!-- Map strings -->
+    <string name="map_loading">Loading map...</string>
+    <string name="map_location_not_available">Location not available</string>
+    <string name="map_my_location">My Location</string>
+    
+    <!-- Google Maps API Key - Replace with your actual API key -->
+    <string name="google_maps_key">YOUR_API_KEY_HERE</string>
 </resources>

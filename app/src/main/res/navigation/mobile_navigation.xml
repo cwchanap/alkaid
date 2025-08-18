@@ -12,6 +12,12 @@
         tools:layout="@layout/fragment_home" />
 
     <fragment
+        android:id="@+id/navigation_map"
+        android:name="com.example.alkaid.ui.map.MapFragment"
+        android:label="@string/title_map"
+        tools:layout="@layout/fragment_map" />
+
+    <fragment
         android:id="@+id/navigation_settings"
         android:name="com.example.alkaid.ui.settings.SettingsFragment"
         android:label="@string/title_settings"
