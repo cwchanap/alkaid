@@ -51,14 +51,14 @@ class SensorCardView @JvmOverloads constructor(
         sensorTitle.text = sensorType.displayName
         
         val iconRes = when (sensorType) {
-            SensorType.BAROMETER -> R.drawable.ic_dashboard_black_24dp
-            SensorType.GYROSCOPE -> R.drawable.ic_home_black_24dp
-            SensorType.TEMPERATURE -> R.drawable.ic_notifications_black_24dp
-            SensorType.GPS -> R.drawable.ic_settings_black_24dp
-            SensorType.ACCELEROMETER -> R.drawable.ic_dashboard_black_24dp
-            SensorType.MAGNETOMETER -> R.drawable.ic_home_black_24dp
-            SensorType.LIGHT -> R.drawable.ic_notifications_black_24dp
-            SensorType.HUMIDITY -> R.drawable.ic_settings_black_24dp
+            SensorType.BAROMETER -> R.drawable.ic_home_black_24dp
+            SensorType.GYROSCOPE -> R.drawable.ic_settings_black_24dp
+            SensorType.TEMPERATURE -> R.drawable.ic_home_black_24dp
+            SensorType.GPS -> R.drawable.ic_map_black_24dp
+            SensorType.ACCELEROMETER -> R.drawable.ic_home_black_24dp
+            SensorType.MAGNETOMETER -> R.drawable.ic_map_black_24dp
+            SensorType.LIGHT -> R.drawable.ic_home_black_24dp
+            SensorType.HUMIDITY -> R.drawable.ic_home_black_24dp
         }
         
         sensorIcon.setImageResource(iconRes)
