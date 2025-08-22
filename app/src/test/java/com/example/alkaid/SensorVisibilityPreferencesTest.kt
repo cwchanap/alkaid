@@ -32,6 +32,11 @@ class SensorVisibilityPreferencesTest {
 
         every { mockContext.getSharedPreferences(any(), any()) } returns mockSharedPreferences
         every { mockSharedPreferences.edit() } returns mockEditor
+        // Fallback for keys not explicitly stubbed below: return default value
+        // For sensors not explicitly stubbed in tests, default to hidden (false)
+        every { mockSharedPreferences.getBoolean(any(), any()) } answers { false }
+        // Ensure chained editor calls return the same editor instance when used
+        every { mockEditor.putBoolean(any(), any()) } returns mockEditor
         every { mockEditor.apply() } returns Unit
 
         sensorVisibilityPreferences = SensorVisibilityPreferences(mockContext)
@@ -75,7 +80,7 @@ class SensorVisibilityPreferencesTest {
         val result = sensorVisibilityPreferences.getAllSensorVisibilityStates()
 
         // Then
-        assertEquals(4, result.size)
+        assertEquals(SensorType.values().size, result.size)
         assertTrue(result[SensorType.BAROMETER] ?: false)
         assertFalse(result[SensorType.GYROSCOPE] ?: true)
         assertTrue(result[SensorType.TEMPERATURE] ?: false)

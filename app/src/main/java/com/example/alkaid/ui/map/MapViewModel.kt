@@ -17,7 +17,7 @@ import kotlinx.coroutines.flow.onEach
  */
 class MapViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val gpsRepository = GpsRepository(application.applicationContext)
+    internal var gpsRepository = GpsRepository(application.applicationContext)
 
     // Current location state
     private val _locationState = MutableStateFlow<LocationState>(LocationState.Loading)
@@ -28,7 +28,7 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
     val isMapReady: StateFlow<Boolean> = _isMapReady.asStateFlow()
 
     init {
-        startLocationUpdates()
+        // Defer starting location updates until the map is ready
     }
 
     /**
@@ -54,6 +54,9 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
      */
     fun onMapReady() {
         _isMapReady.value = true
+        // Start observing only when the map is ready to avoid
+        // touching location services during ViewModel construction (helps tests)
+        startLocationUpdates()
     }
 
     /**
@@ -72,6 +75,10 @@ class MapViewModel(application: Application) : AndroidViewModel(application) {
     fun requestLocationUpdate() {
         // The repository is already providing continuous updates
         // This could be used to trigger immediate location request if needed
+    }
+
+    fun setLocationStateForTesting(state: LocationState) {
+        _locationState.value = state
     }
 }
 

@@ -36,10 +36,11 @@ class SensorVisibilityPreferences(context: Context) {
      * Sets the visibility state for a specific sensor type.
      */
     fun setSensorVisible(sensorType: SensorType, isVisible: Boolean) {
-        sharedPreferences.edit()
-            .putBoolean(sensorType.settingsKey, isVisible)
-            .apply()
-        
+        // Avoid chaining so tests can verify apply() on the same mock instance
+        val editor = sharedPreferences.edit()
+        editor.putBoolean(sensorType.settingsKey, isVisible)
+        editor.apply()
+
         // Trigger state change notification
         _preferencesChanged.value += 1
     }

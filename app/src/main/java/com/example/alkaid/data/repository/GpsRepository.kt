@@ -22,7 +22,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
  * Repository for GPS location data.
  * Provides location updates including latitude, longitude, altitude, and accuracy.
  */
-class GpsRepository(private val context: Context) : BaseSensorRepository<LocationData> {
+open class GpsRepository(private val context: Context) : BaseSensorRepository<LocationData> {
 
     private val fusedLocationClient: FusedLocationProviderClient = 
         LocationServices.getFusedLocationProviderClient(context)
