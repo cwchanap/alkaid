@@ -19,6 +19,16 @@ import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.MarkerOptions
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import android.widget.ArrayAdapter
+import android.widget.AdapterView
+import android.text.TextWatcher
+import android.text.Editable
+import android.content.pm.PackageManager
 
 // osmdroid (OpenStreetMap) imports
 import org.osmdroid.config.Configuration
@@ -46,7 +56,18 @@ class MapFragment : Fragment(), OnMapReadyCallback {
     // OSM state
     private var osmMapView: MapView? = null
     private var osmMarker: Marker? = null
+    private var osmSearchMarker: Marker? = null
     private var useOsm: Boolean = false
+    private var suggestionsAdapter: ArrayAdapter<String>? = null
+    private var currentSuggestions: List<SearchItem> = emptyList()
+    private var searchDebounceJob: Job? = null
+    private var searchTextWatcher: TextWatcher? = null
+    private var lastQueryLen: Int = 0
+    private var lastQueryText: String = ""
+
+    private val nominatimCache = object : LinkedHashMap<String, List<SearchItem>>(16, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, List<SearchItem>>?): Boolean = size > 50
+    }
 
     // Default fallback location (San Francisco, CA)
     private val defaultLat = 37.7749
@@ -85,6 +106,7 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         setupObservers()
         setupFab()
         setupProviderToggle()
+        setupOsmSearch()
     }
 
     private fun setupMap() { /* no-op; created on demand */ }
@@ -282,6 +304,8 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         useOsm = false
         // Show Google by hiding the OSM overlay
         binding.osmMap.visibility = View.GONE
+        // Hide OSM search bar
+        binding.osmSearchContainer.visibility = View.GONE
         // Lazily add Google Map fragment
         if (googleMapFragment == null) {
             googleMapFragment = SupportMapFragment.newInstance().also { fragment ->
@@ -304,6 +328,8 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         }
         // Show OSM overlay above the Google fragment
         binding.osmMap.visibility = View.VISIBLE
+        // Show OSM search bar
+        binding.osmSearchContainer.visibility = View.VISIBLE
         // Update location on OSM map if available
         viewModel.getCurrentLocation()?.let { updateOsmMapLocation(it) } ?: run { showDefaultOnOsmMap() }
         if (!viewModel.isMapReady.value) {
@@ -363,8 +389,211 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         }
     }
 
+    private fun setupOsmSearch() {
+        // Prepare adapter for suggestions
+        suggestionsAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_list_item_1, mutableListOf())
+        binding.osmSearchInput.setAdapter(suggestionsAdapter)
+
+        binding.osmSearchInput.setOnItemClickListener { _: AdapterView<*>, _, idx, _ ->
+            val item = currentSuggestions.getOrNull(idx) ?: return@setOnItemClickListener
+            // Apply selection behavior
+            val point = GeoPoint(item.lat, item.lon)
+            // Remove previous search marker
+            osmSearchMarker?.let { m -> osmMapView?.overlays?.remove(m) }
+            osmSearchMarker = Marker(osmMapView).apply {
+                this.position = point
+                title = item.name
+                snippet = "Lat: %.5f, Lng: %.5f".format(item.lat, item.lon)
+                setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+            }
+            osmMapView?.overlays?.add(osmSearchMarker)
+            osmMapView?.controller?.setZoom(14.0)
+            osmMapView?.controller?.animateTo(point)
+            osmMapView?.invalidate()
+        }
+
+        // Show dropdown on focus if we already have suggestions
+        binding.osmSearchInput.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus && suggestionsAdapter?.count ?: 0 > 0) {
+                binding.osmSearchInput.showDropDown()
+            }
+        }
+
+        // Debounced query on text changes, with immediate fetch when crossing threshold
+        searchTextWatcher = object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun afterTextChanged(s: Editable?) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                val q = s?.toString()?.trim().orEmpty()
+                searchDebounceJob?.cancel()
+                if (!useOsm) return
+                if (q.length < 3) {
+                    currentSuggestions = emptyList()
+                    suggestionsAdapter?.clear()
+                    binding.osmSearchInput.dismissDropDown()
+                    lastQueryLen = q.length
+                    lastQueryText = q
+                    return
+                }
+                val key = q.lowercase(java.util.Locale.ROOT)
+                val immediate = lastQueryLen < 3 && q.length >= 3
+                lastQueryLen = q.length
+                lastQueryText = q
+                // If cache has data, show it right away for responsiveness
+                nominatimCache[key]?.let { cached ->
+                    currentSuggestions = cached
+                    suggestionsAdapter?.apply {
+                        clear()
+                        addAll(cached.map { it.name })
+                        notifyDataSetChanged()
+                    }
+                    if (binding.osmSearchInput.isFocused) {
+                        // Post to ensure dropdown updates after dataset change
+                        binding.osmSearchInput.post { binding.osmSearchInput.showDropDown() }
+                    }
+                }
+                if (immediate) {
+                    // Fetch immediately when user first reaches threshold
+                    fetchAndShowSuggestions(q)
+                } else {
+                    searchDebounceJob = viewLifecycleOwner.lifecycleScope.launch {
+                        delay(250)
+                        // Only fetch if text hasn't changed again
+                        if (binding.osmSearchInput.text?.toString()?.trim() == q) {
+                            fetchAndShowSuggestions(q)
+                        }
+                    }
+                }
+            }
+        }
+        binding.osmSearchInput.addTextChangedListener(searchTextWatcher)
+
+        // End icon click triggers search
+        binding.osmSearchContainer.setEndIconOnClickListener {
+            val q = binding.osmSearchInput.text?.toString()?.trim().orEmpty()
+            if (q.isNotEmpty()) performOsmSearch(q)
+        }
+        // Keyboard action Search/Done
+        binding.osmSearchInput.setOnEditorActionListener { v, _, _ ->
+            val text = v.text?.toString()?.trim().orEmpty()
+            if (text.isNotEmpty()) {
+                performOsmSearch(text)
+                true
+            } else false
+        }
+    }
+
+    private fun fetchAndShowSuggestions(q: String) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            val key = q.lowercase(java.util.Locale.ROOT)
+            val items: List<SearchItem>? = nominatimCache[key] ?: withContext(Dispatchers.IO) {
+                runCatching { nominatimSearch(q) }.onSuccess { nominatimCache[key] = it }.getOrNull()
+            }
+            if (items == null) return@launch
+            currentSuggestions = items
+            suggestionsAdapter?.apply {
+                clear()
+                addAll(items.map { it.name })
+                notifyDataSetChanged()
+            }
+            if (binding.osmSearchInput.isFocused) {
+                // Post to ensure UI is ready to render updated dropdown
+                binding.osmSearchInput.post { binding.osmSearchInput.showDropDown() }
+            }
+        }
+    }
+
+    private fun performOsmSearch(query: String) {
+        // Disable input while searching
+        binding.osmSearchContainer.isEnabled = false
+        val originalHint = binding.osmSearchInput.hint
+        binding.osmSearchInput.hint = getString(R.string.sensor_loading)
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            val items: List<SearchItem>? = withContext(Dispatchers.IO) {
+                runCatching { nominatimSearch(query) }.getOrNull()
+            }
+            // Restore UI state
+            binding.osmSearchContainer.isEnabled = true
+            binding.osmSearchInput.hint = originalHint
+
+            if (items == null) {
+                android.widget.Toast.makeText(requireContext(), getString(R.string.map_search_error), android.widget.Toast.LENGTH_SHORT).show()
+                return@launch
+            }
+            if (items.isEmpty()) {
+                android.widget.Toast.makeText(requireContext(), getString(R.string.map_search_no_results), android.widget.Toast.LENGTH_SHORT).show()
+                return@launch
+            }
+
+            val top = items.first()
+            val point = GeoPoint(top.lat, top.lon)
+            // Remove previous search marker
+            osmSearchMarker?.let { m -> osmMapView?.overlays?.remove(m) }
+            osmSearchMarker = Marker(osmMapView).apply {
+                position = point
+                title = top.name
+                snippet = "Lat: %.5f, Lng: %.5f".format(top.lat, top.lon)
+                setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+            }
+            osmMapView?.overlays?.add(osmSearchMarker)
+            // Center and zoom to searched point
+            osmMapView?.controller?.setZoom(14.0)
+            osmMapView?.controller?.animateTo(point)
+            osmMapView?.invalidate()
+        }
+    }
+
+    private data class SearchItem(val name: String, val lat: Double, val lon: Double)
+
+    private fun nominatimSearch(query: String): List<SearchItem> {
+        val encoded = java.net.URLEncoder.encode(query, Charsets.UTF_8.name())
+        val url = java.net.URL("https://nominatim.openstreetmap.org/search?q=$encoded&format=json&limit=5&addressdetails=0")
+        val conn = (url.openConnection() as java.net.HttpURLConnection).apply {
+            requestMethod = "GET"
+            connectTimeout = 8000
+            readTimeout = 8000
+            // Nominatim usage policy recommends a descriptive UA
+            setRequestProperty("User-Agent", "${requireContext().packageName}/${getAppVersionName()}")
+            setRequestProperty("Accept-Language", java.util.Locale.getDefault().toLanguageTag())
+        }
+        conn.inputStream.use { input ->
+            val body = input.bufferedReader().readText()
+            val arr = org.json.JSONArray(body)
+            val items = mutableListOf<SearchItem>()
+            for (i in 0 until arr.length()) {
+                val obj = arr.getJSONObject(i)
+                val name = obj.optString("display_name", "")
+                val lat = obj.optString("lat", null)?.toDoubleOrNull() ?: continue
+                val lon = obj.optString("lon", null)?.toDoubleOrNull() ?: continue
+                items.add(SearchItem(name = name, lat = lat, lon = lon))
+            }
+            return items
+        }
+    }
+
+    private fun getAppVersionName(): String {
+        return try {
+            val pkg = requireContext().packageName
+            val pm = requireContext().packageManager
+            if (android.os.Build.VERSION.SDK_INT >= 33) {
+                pm.getPackageInfo(pkg, PackageManager.PackageInfoFlags.of(0)).versionName ?: ""
+            } else {
+                @Suppress("DEPRECATION")
+                pm.getPackageInfo(pkg, 0).versionName ?: ""
+            }
+        } catch (e: Exception) {
+            ""
+        }
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
+        // Clean up watchers and jobs
+        searchDebounceJob?.cancel()
+        searchDebounceJob = null
+        searchTextWatcher?.let { watcher -> binding.osmSearchInput.removeTextChangedListener(watcher) }
+        searchTextWatcher = null
         _binding = null
     }
 
