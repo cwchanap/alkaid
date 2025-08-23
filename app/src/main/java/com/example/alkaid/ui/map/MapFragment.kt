@@ -20,6 +20,15 @@ import com.google.android.gms.maps.model.MarkerOptions
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 
+// osmdroid (OpenStreetMap) imports
+import org.osmdroid.config.Configuration
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.Marker
+import com.example.alkaid.data.preferences.MapPreferences
+import com.example.alkaid.data.preferences.MapPreferences.MapProvider
+
 /**
  * Fragment that displays a Google Map with current location tracking
  */
@@ -29,8 +38,19 @@ class MapFragment : Fragment(), OnMapReadyCallback {
     private val binding get() = _binding!!
 
     private lateinit var viewModel: MapViewModel
+    private lateinit var mapPreferences: MapPreferences
     private var googleMap: GoogleMap? = null
+    private var googleMapFragment: SupportMapFragment? = null
     private var currentLocationMarker: com.google.android.gms.maps.model.Marker? = null
+
+    // OSM state
+    private var osmMapView: MapView? = null
+    private var osmMarker: Marker? = null
+    private var useOsm: Boolean = false
+
+    // Default fallback location (San Francisco, CA)
+    private val defaultLat = 37.7749
+    private val defaultLon = -122.4194
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -50,15 +70,15 @@ class MapFragment : Fragment(), OnMapReadyCallback {
             ViewModelProvider.AndroidViewModelFactory.getInstance(requireActivity().application)
         )[MapViewModel::class.java]
 
-        setupMap()
+        mapPreferences = MapPreferences(requireContext())
+
+        // Only create Google map when selected; OSM is default via preferences
         setupObservers()
         setupFab()
+        setupProviderToggle()
     }
 
-    private fun setupMap() {
-        val mapFragment = childFragmentManager.findFragmentById(R.id.map) as? SupportMapFragment
-        mapFragment?.getMapAsync(this)
-    }
+    private fun setupMap() { /* no-op; created on demand */ }
 
     private fun setupObservers() {
         // Observe location state changes
@@ -117,7 +137,7 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         // If we already have location data, update the map
         viewModel.getCurrentLocation()?.let { locationData ->
             updateMapLocation(locationData)
-        }
+        } ?: run { ensureDefaultLocation() }
     }
 
     private fun updateLocationUI(locationState: LocationState) {
@@ -147,31 +167,53 @@ class MapFragment : Fragment(), OnMapReadyCallback {
     }
 
     private fun updateMapLocation(locationData: LocationData) {
+        if (useOsm) {
+            updateOsmMapLocation(locationData)
+        } else {
+            updateGoogleMapLocation(locationData)
+        }
+    }
+
+    private fun updateGoogleMapLocation(locationData: LocationData) {
         googleMap?.let { map ->
             val latLng = LatLng(locationData.latitude, locationData.longitude)
-            
-            // Remove existing marker
             currentLocationMarker?.remove()
-            
-            // Add new marker
             currentLocationMarker = map.addMarker(
                 MarkerOptions()
                     .position(latLng)
                     .title(getString(R.string.map_my_location))
                     .snippet("${locationData.getFormattedLatLng()}\nAltitude: ${locationData.getFormattedAltitude()}")
             )
-            
-            // Move camera to location if this is the first location update
-            if (!::viewModel.isInitialized || viewModel.isMapReady.value) {
-                centerMapOnLocation(latLng)
+            centerMapOnLocation(latLng)
+        }
+    }
+
+    private fun updateOsmMapLocation(locationData: LocationData) {
+        osmMapView?.let { mapView ->
+            val point = GeoPoint(locationData.latitude, locationData.longitude)
+            // Remove existing marker
+            osmMarker?.let { marker -> mapView.overlays.remove(marker) }
+            // Add new marker
+            osmMarker = Marker(mapView).apply {
+                position = point
+                title = getString(R.string.map_my_location)
+                snippet = "${locationData.getFormattedLatLng()}\nAltitude: ${locationData.getFormattedAltitude()}"
+                setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
             }
+            mapView.overlays.add(osmMarker)
+            centerOsmOnLocation(point)
+            mapView.invalidate()
         }
     }
 
     private fun centerMapOnCurrentLocation() {
         viewModel.getCurrentLocation()?.let { locationData ->
-            val latLng = LatLng(locationData.latitude, locationData.longitude)
-            centerMapOnLocation(latLng)
+            if (useOsm) {
+                centerOsmOnLocation(GeoPoint(locationData.latitude, locationData.longitude))
+            } else {
+                val latLng = LatLng(locationData.latitude, locationData.longitude)
+                centerMapOnLocation(latLng)
+            }
         }
     }
 
@@ -181,8 +223,134 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         )
     }
 
+    private fun centerOsmOnLocation(point: GeoPoint, zoom: Double = 15.0) {
+        osmMapView?.controller?.setZoom(zoom)
+        osmMapView?.controller?.animateTo(point)
+    }
+
+    private fun setupProviderToggle() {
+        binding.toggleMapProvider.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (!isChecked) return@addOnButtonCheckedListener
+            when (checkedId) {
+                binding.btnProviderGoogle.id -> {
+                    mapPreferences.setProvider(MapProvider.GOOGLE)
+                    showGoogleMap()
+                }
+                binding.btnProviderOsm.id -> {
+                    mapPreferences.setProvider(MapProvider.OSM)
+                    showOsmMap()
+                }
+            }
+        }
+
+        // Apply saved preference (default OSM)
+        when (mapPreferences.getProvider()) {
+            MapProvider.GOOGLE -> binding.toggleMapProvider.check(binding.btnProviderGoogle.id)
+            MapProvider.OSM -> binding.toggleMapProvider.check(binding.btnProviderOsm.id)
+        }
+    }
+
+    private fun showGoogleMap() {
+        useOsm = false
+        // Show Google by hiding the OSM overlay
+        binding.osmMap.visibility = View.GONE
+        // Lazily add Google Map fragment
+        if (googleMapFragment == null) {
+            googleMapFragment = SupportMapFragment.newInstance().also { fragment ->
+                childFragmentManager
+                    .beginTransaction()
+                    .replace(R.id.google_map_container, fragment, "google_map")
+                    .commitNowAllowingStateLoss()
+                fragment.getMapAsync(this)
+            }
+        }
+        // Update location on Google map if available
+        viewModel.getCurrentLocation()?.let { updateGoogleMapLocation(it) } ?: run { showDefaultOnGoogleMap() }
+    }
+
+    private fun showOsmMap() {
+        useOsm = true
+        // Initialize osmdroid MapView lazily
+        if (osmMapView == null) {
+            initializeOsmMap()
+        }
+        // Show OSM overlay above the Google fragment
+        binding.osmMap.visibility = View.VISIBLE
+        // Update location on OSM map if available
+        viewModel.getCurrentLocation()?.let { updateOsmMapLocation(it) } ?: run { showDefaultOnOsmMap() }
+        if (!viewModel.isMapReady.value) {
+            // Start location updates when OSM gets initialized and becomes visible
+            viewModel.onMapReady()
+        }
+    }
+
+    private fun ensureDefaultLocation() {
+        if (useOsm) {
+            showDefaultOnOsmMap()
+        } else {
+            showDefaultOnGoogleMap()
+        }
+    }
+
+    private fun showDefaultOnGoogleMap() {
+        googleMap?.let { map ->
+            val latLng = LatLng(defaultLat, defaultLon)
+            currentLocationMarker?.remove()
+            currentLocationMarker = map.addMarker(
+                MarkerOptions()
+                    .position(latLng)
+                    .title(getString(R.string.map_default_location))
+                    .snippet("Lat: %.4f, Lng: %.4f".format(defaultLat, defaultLon))
+            )
+            centerMapOnLocation(latLng)
+        }
+    }
+
+    private fun showDefaultOnOsmMap() {
+        osmMapView?.let { mapView ->
+            val point = GeoPoint(defaultLat, defaultLon)
+            osmMarker?.let { marker -> mapView.overlays.remove(marker) }
+            osmMarker = Marker(mapView).apply {
+                position = point
+                title = getString(R.string.map_default_location)
+                snippet = "Lat: %.4f, Lng: %.4f".format(defaultLat, defaultLon)
+                setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+            }
+            mapView.overlays.add(osmMarker)
+            centerOsmOnLocation(point)
+            mapView.invalidate()
+        }
+    }
+
+    private fun initializeOsmMap() {
+        // Configure osmdroid
+        Configuration.getInstance().userAgentValue = requireContext().packageName
+        osmMapView = binding.osmMap.apply {
+            setTileSource(TileSourceFactory.MAPNIK)
+            setMultiTouchControls(true)
+            // Built-in zoom controls off; use gestures and FAB
+            setBuiltInZoomControls(false)
+        }
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+    }
+
+    override fun onResume() {
+        super.onResume()
+        osmMapView?.onResume()
+        // Keep in-map toggle in sync with Settings
+        val preferred = mapPreferences.getProvider()
+        val targetId = if (preferred == MapProvider.OSM) binding.btnProviderOsm.id else binding.btnProviderGoogle.id
+        if (binding.toggleMapProvider.checkedButtonId != targetId) {
+            binding.toggleMapProvider.check(targetId)
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        osmMapView?.onPause()
     }
 }

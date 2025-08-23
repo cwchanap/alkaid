@@ -36,11 +36,16 @@
     <string name="settings_show_magnetometer">Show Magnetometer</string>
     <string name="settings_show_light">Show Light Sensor</string>
     <string name="settings_show_humidity">Show Humidity</string>
+    <string name="settings_map_provider">Map Provider</string>
+    <string name="settings_map_provider_description">Choose the default map provider</string>
     
     <!-- Map strings -->
     <string name="map_loading">Loading map...</string>
     <string name="map_location_not_available">Location not available</string>
     <string name="map_my_location">My Location</string>
+    <string name="map_default_location">Default Location</string>
+    <string name="map_provider_google">Google</string>
+    <string name="map_provider_osm">OSM</string>
     
     <!-- Google Maps API Key - Replace with your actual API key -->
     <string name="google_maps_key">DUMMY_API_KEY</string>

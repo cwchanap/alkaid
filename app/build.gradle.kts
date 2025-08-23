@@ -50,6 +50,8 @@ dependencies {
     implementation(libs.androidx.navigation.ui.ktx)
     implementation(libs.play.services.location)
     implementation("com.google.android.gms:play-services-maps:18.2.0")
+    // OpenStreetMap via osmdroid
+    implementation("org.osmdroid:osmdroid-android:6.1.16")
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
     testImplementation("io.mockk:mockk-android:1.13.3")

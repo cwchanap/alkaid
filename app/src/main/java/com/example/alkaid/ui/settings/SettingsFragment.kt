@@ -15,6 +15,8 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.example.alkaid.R
 import com.example.alkaid.data.preferences.SensorVisibilityPreferences
+import com.example.alkaid.data.preferences.MapPreferences
+import com.example.alkaid.data.preferences.MapPreferences.MapProvider
 import com.example.alkaid.data.sensor.SensorType
 import com.example.alkaid.databinding.FragmentSettingsBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -33,6 +35,7 @@ class SettingsFragment : Fragment() {
     private val binding get() = _binding!!
 
     private lateinit var sensorPreferences: SensorVisibilityPreferences
+    private lateinit var mapPreferences: MapPreferences
 
     // Request permission launcher for location
     private val requestLocationPermission = registerForActivityResult(
@@ -68,8 +71,10 @@ class SettingsFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         
         sensorPreferences = SensorVisibilityPreferences(requireContext())
+        mapPreferences = MapPreferences(requireContext())
         
         setupSwitches()
+        setupMapProvider()
         observePreferences()
     }
 
@@ -115,6 +120,22 @@ class SettingsFragment : Fragment() {
 
         binding.switchHumidity.setOnCheckedChangeListener { _, isChecked ->
             sensorPreferences.setSensorVisible(SensorType.HUMIDITY, isChecked)
+        }
+    }
+
+    private fun setupMapProvider() {
+        // Initialize selection from saved preference (default OSM)
+        when (mapPreferences.getProvider()) {
+            MapProvider.GOOGLE -> binding.toggleMapProviderSettings.check(binding.btnProviderGoogleSettings.id)
+            MapProvider.OSM -> binding.toggleMapProviderSettings.check(binding.btnProviderOsmSettings.id)
+        }
+
+        binding.toggleMapProviderSettings.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (!isChecked) return@addOnButtonCheckedListener
+            when (checkedId) {
+                binding.btnProviderGoogleSettings.id -> mapPreferences.setProvider(MapProvider.GOOGLE)
+                binding.btnProviderOsmSettings.id -> mapPreferences.setProvider(MapProvider.OSM)
+            }
         }
     }
 
