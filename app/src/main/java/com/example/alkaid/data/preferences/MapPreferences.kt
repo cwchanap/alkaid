@@ -17,9 +17,18 @@ class MapPreferences(context: Context) {
         prefs.edit().putString(KEY_PROVIDER, provider.name).apply()
     }
 
+    fun getDefaultZoom(): Float {
+        return prefs.getFloat(KEY_DEFAULT_ZOOM, DEFAULT_ZOOM)
+    }
+
+    fun setDefaultZoom(zoom: Float) {
+        prefs.edit().putFloat(KEY_DEFAULT_ZOOM, zoom).apply()
+    }
+
     companion object {
         private const val PREFS_NAME = "map_preferences"
         private const val KEY_PROVIDER = "provider"
+        private const val KEY_DEFAULT_ZOOM = "default_zoom"
+        private const val DEFAULT_ZOOM = 9f
     }
 }
-

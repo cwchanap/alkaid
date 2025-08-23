@@ -51,6 +51,12 @@ class MapFragment : Fragment(), OnMapReadyCallback {
     // Default fallback location (San Francisco, CA)
     private val defaultLat = 37.7749
     private val defaultLon = -122.4194
+    private var defaultZoom = 9.0
+    private var defaultZoomF = 9f
+
+    // Track whether we've already centered once per provider
+    private var googleCenteredOnce = false
+    private var osmCenteredOnce = false
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -71,6 +77,9 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         )[MapViewModel::class.java]
 
         mapPreferences = MapPreferences(requireContext())
+        // Load default zoom from preferences
+        defaultZoomF = mapPreferences.getDefaultZoom()
+        defaultZoom = defaultZoomF.toDouble()
 
         // Only create Google map when selected; OSM is default via preferences
         setupObservers()
@@ -122,6 +131,13 @@ class MapFragment : Fragment(), OnMapReadyCallback {
                 isCompassEnabled = true
                 isMyLocationButtonEnabled = false // We use our own FAB
                 isMapToolbarEnabled = true
+                // Ensure gesture zooming and panning are enabled
+                isZoomGesturesEnabled = true
+                isScrollGesturesEnabled = true
+                isRotateGesturesEnabled = true
+                isTiltGesturesEnabled = true
+                @Suppress("DEPRECATION")
+                runCatching { uiSettings.isScrollGesturesEnabledDuringRotateOrZoom = true }
             }
             
             // Try to enable the My Location layer if we have permission
@@ -184,7 +200,12 @@ class MapFragment : Fragment(), OnMapReadyCallback {
                     .title(getString(R.string.map_my_location))
                     .snippet("${locationData.getFormattedLatLng()}\nAltitude: ${locationData.getFormattedAltitude()}")
             )
-            centerMapOnLocation(latLng)
+            if (!googleCenteredOnce) {
+                centerMapOnLocation(latLng, defaultZoomF)
+                googleCenteredOnce = true
+            } else {
+                googleMap?.animateCamera(CameraUpdateFactory.newLatLng(latLng))
+            }
         }
     }
 
@@ -201,7 +222,12 @@ class MapFragment : Fragment(), OnMapReadyCallback {
                 setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
             }
             mapView.overlays.add(osmMarker)
-            centerOsmOnLocation(point)
+            if (!osmCenteredOnce) {
+                centerOsmOnLocation(point, defaultZoom)
+                osmCenteredOnce = true
+            } else {
+                osmMapView?.controller?.animateTo(point)
+            }
             mapView.invalidate()
         }
     }
@@ -209,21 +235,23 @@ class MapFragment : Fragment(), OnMapReadyCallback {
     private fun centerMapOnCurrentLocation() {
         viewModel.getCurrentLocation()?.let { locationData ->
             if (useOsm) {
-                centerOsmOnLocation(GeoPoint(locationData.latitude, locationData.longitude))
+                // Pan without changing zoom
+                osmMapView?.controller?.animateTo(GeoPoint(locationData.latitude, locationData.longitude))
             } else {
                 val latLng = LatLng(locationData.latitude, locationData.longitude)
-                centerMapOnLocation(latLng)
+                // Pan without changing zoom
+                googleMap?.animateCamera(CameraUpdateFactory.newLatLng(latLng))
             }
         }
     }
 
-    private fun centerMapOnLocation(latLng: LatLng, zoom: Float = 15f) {
+    private fun centerMapOnLocation(latLng: LatLng, zoom: Float = 9f) {
         googleMap?.animateCamera(
             CameraUpdateFactory.newLatLngZoom(latLng, zoom)
         )
     }
 
-    private fun centerOsmOnLocation(point: GeoPoint, zoom: Double = 15.0) {
+    private fun centerOsmOnLocation(point: GeoPoint, zoom: Double = 9.0) {
         osmMapView?.controller?.setZoom(zoom)
         osmMapView?.controller?.animateTo(point)
     }
@@ -302,7 +330,8 @@ class MapFragment : Fragment(), OnMapReadyCallback {
                     .title(getString(R.string.map_default_location))
                     .snippet("Lat: %.4f, Lng: %.4f".format(defaultLat, defaultLon))
             )
-            centerMapOnLocation(latLng)
+            centerMapOnLocation(latLng, defaultZoomF)
+            googleCenteredOnce = true
         }
     }
 
@@ -317,7 +346,8 @@ class MapFragment : Fragment(), OnMapReadyCallback {
                 setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
             }
             mapView.overlays.add(osmMarker)
-            centerOsmOnLocation(point)
+            centerOsmOnLocation(point, defaultZoom)
+            osmCenteredOnce = true
             mapView.invalidate()
         }
     }
@@ -328,8 +358,8 @@ class MapFragment : Fragment(), OnMapReadyCallback {
         osmMapView = binding.osmMap.apply {
             setTileSource(TileSourceFactory.MAPNIK)
             setMultiTouchControls(true)
-            // Built-in zoom controls off; use gestures and FAB
-            setBuiltInZoomControls(false)
+            // Enable built-in zoom controls and pinch-zoom gestures
+            setBuiltInZoomControls(true)
         }
     }
 
@@ -341,6 +371,9 @@ class MapFragment : Fragment(), OnMapReadyCallback {
     override fun onResume() {
         super.onResume()
         osmMapView?.onResume()
+        // Refresh default zoom from preferences in case it changed in Settings
+        defaultZoomF = mapPreferences.getDefaultZoom()
+        defaultZoom = defaultZoomF.toDouble()
         // Keep in-map toggle in sync with Settings
         val preferred = mapPreferences.getProvider()
         val targetId = if (preferred == MapProvider.OSM) binding.btnProviderOsm.id else binding.btnProviderGoogle.id

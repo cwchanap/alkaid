@@ -75,6 +75,7 @@ class SettingsFragment : Fragment() {
         
         setupSwitches()
         setupMapProvider()
+        setupMapZoom()
         observePreferences()
     }
 
@@ -120,6 +121,19 @@ class SettingsFragment : Fragment() {
 
         binding.switchHumidity.setOnCheckedChangeListener { _, isChecked ->
             sensorPreferences.setSensorVisible(SensorType.HUMIDITY, isChecked)
+        }
+    }
+
+    private fun setupMapZoom() {
+        // Initialize slider from preference
+        val current = mapPreferences.getDefaultZoom().toInt()
+        binding.sliderDefaultZoom.value = current.toFloat()
+        binding.txtDefaultZoomValue.text = getString(R.string.settings_map_zoom_value, current)
+
+        binding.sliderDefaultZoom.addOnChangeListener { _, value, fromUser ->
+            val zoom = value.toInt().coerceIn(3, 20)
+            binding.txtDefaultZoomValue.text = getString(R.string.settings_map_zoom_value, zoom)
+            mapPreferences.setDefaultZoom(zoom.toFloat())
         }
     }
 

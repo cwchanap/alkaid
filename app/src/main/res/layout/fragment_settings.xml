@@ -59,6 +59,48 @@
 
         </com.google.android.material.card.MaterialCardView>
 
+        <!-- Map Default Zoom Setting -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="2dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/settings_map_zoom"
+                    android:textAppearance="?attr/textAppearanceBody1"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:id="@+id/txt_default_zoom_value"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/settings_map_zoom_value_placeholder"
+                    android:textAppearance="?attr/textAppearanceCaption"
+                    android:textColor="@android:color/darker_gray"
+                    android:layout_marginBottom="4dp" />
+
+                <com.google.android.material.slider.Slider
+                    android:id="@+id/slider_default_zoom"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:valueFrom="3"
+                    android:valueTo="20"
+                    android:stepSize="1" />
+
+            </LinearLayout>
+
+        </com.google.android.material.card.MaterialCardView>
+
         <!-- Gyroscope Setting -->
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
