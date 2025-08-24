@@ -18,6 +18,7 @@ import com.example.alkaid.data.preferences.SensorVisibilityPreferences
 import com.example.alkaid.data.preferences.MapPreferences
 import com.example.alkaid.data.preferences.MapPreferences.MapProvider
 import com.example.alkaid.data.sensor.SensorType
+import com.example.alkaid.data.security.SecureStorage
 import com.example.alkaid.databinding.FragmentSettingsBinding
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
@@ -36,6 +37,7 @@ class SettingsFragment : Fragment() {
 
     private lateinit var sensorPreferences: SensorVisibilityPreferences
     private lateinit var mapPreferences: MapPreferences
+    private lateinit var secureStorage: SecureStorage
 
     // Request permission launcher for location
     private val requestLocationPermission = registerForActivityResult(
@@ -72,10 +74,12 @@ class SettingsFragment : Fragment() {
         
         sensorPreferences = SensorVisibilityPreferences(requireContext())
         mapPreferences = MapPreferences(requireContext())
+        secureStorage = SecureStorage(requireContext())
         
         setupSwitches()
         setupMapProvider()
         setupMapZoom()
+        setupWeatherApiKey()
         observePreferences()
     }
 
@@ -209,6 +213,53 @@ class SettingsFragment : Fragment() {
             }
             startActivity(intent)
         }.show()
+    }
+    
+    private fun setupWeatherApiKey() {
+        // Initialize API key field - show placeholder if key exists
+        val hasApiKey = secureStorage.hasWeatherApiKey()
+        if (hasApiKey) {
+            binding.editWeatherApiKey.setText("••••••••••••••••") // Show masked API key
+        }
+        
+        // Update button states
+        updateWeatherApiKeyButtons(hasApiKey)
+        
+        // Save button click listener
+        binding.btnSaveWeatherApiKey.setOnClickListener {
+            val apiKey = binding.editWeatherApiKey.text?.toString()?.trim()
+            if (!apiKey.isNullOrEmpty() && !apiKey.contains("•")) {
+                secureStorage.saveWeatherApiKey(apiKey)
+                
+                // Clear the field and show masked version
+                binding.editWeatherApiKey.setText("••••••••••••••••")
+                updateWeatherApiKeyButtons(true)
+                
+                Snackbar.make(binding.root, "API key saved successfully", Snackbar.LENGTH_SHORT).show()
+            } else {
+                Snackbar.make(binding.root, "Please enter a valid API key", Snackbar.LENGTH_SHORT).show()
+            }
+        }
+        
+        // Remove button click listener
+        binding.btnRemoveWeatherApiKey.setOnClickListener {
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Remove API Key")
+                .setMessage("Are you sure you want to remove the weather API key?")
+                .setPositiveButton("Remove") { _, _ ->
+                    secureStorage.removeWeatherApiKey()
+                    binding.editWeatherApiKey.setText("")
+                    updateWeatherApiKeyButtons(false)
+                    Snackbar.make(binding.root, "API key removed", Snackbar.LENGTH_SHORT).show()
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        }
+    }
+    
+    private fun updateWeatherApiKeyButtons(hasApiKey: Boolean) {
+        binding.btnRemoveWeatherApiKey.visibility = if (hasApiKey) View.VISIBLE else View.GONE
+        binding.btnSaveWeatherApiKey.text = if (hasApiKey) "Update" else getString(R.string.settings_weather_api_key_save)
     }
 
     private fun observePreferences() {

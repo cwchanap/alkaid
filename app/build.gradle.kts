@@ -50,17 +50,22 @@ dependencies {
     implementation(libs.androidx.navigation.ui.ktx)
     implementation(libs.play.services.location)
     implementation("com.google.android.gms:play-services-maps:18.2.0")
-    // OpenStreetMap via osmdroid
-    implementation("org.osmdroid:osmdroid-android:6.1.16")
+    
+    // Networking for weather API
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.11.0")
+    implementation("com.google.code.gson:gson:2.10.1")
+    
+    // Security for API key storage
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
+    
+    // OSM for alternative map provider
+    implementation("org.osmdroid:osmdroid-android:6.1.17")
+    
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
-    testImplementation("io.mockk:mockk-android:1.13.3")
-    testImplementation("app.cash.turbine:turbine:0.7.0")
     testImplementation(libs.kotlinx.coroutines.test)
-    testImplementation("androidx.test:core-ktx:1.5.0")
-    testImplementation("androidx.test.ext:junit-ktx:1.1.5")
-    testImplementation("org.robolectric:robolectric:4.10.3")
-    testImplementation("androidx.arch.core:core-testing:2.2.0")
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 }

@@ -18,6 +18,12 @@
         tools:layout="@layout/fragment_map" />
 
     <fragment
+        android:id="@+id/navigation_weather"
+        android:name="com.example.alkaid.ui.weather.WeatherFragment"
+        android:label="@string/title_weather"
+        tools:layout="@layout/fragment_weather" />
+
+    <fragment
         android:id="@+id/navigation_settings"
         android:name="com.example.alkaid.ui.settings.SettingsFragment"
         android:label="@string/title_settings"

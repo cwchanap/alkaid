@@ -4,6 +4,7 @@
     <string name="title_sensors">Sensors</string>
     
     <string name="title_map">Map</string>
+    <string name="title_weather">Weather</string>
     <string name="title_settings">Settings</string>
     
     <!-- Sensor related strings -->
@@ -36,11 +37,30 @@
     <string name="settings_show_magnetometer">Show Magnetometer</string>
     <string name="settings_show_light">Show Light Sensor</string>
     <string name="settings_show_humidity">Show Humidity</string>
-    <string name="settings_map_provider">Map Provider</string>
-    <string name="settings_map_provider_description">Choose the default map provider</string>
-    <string name="settings_map_zoom">Default Map Zoom</string>
-    <string name="settings_map_zoom_value">Zoom: %1$d</string>
-    <string name="settings_map_zoom_value_placeholder">Zoom: -</string>
+    
+    <!-- Weather settings -->
+    <string name="settings_weather_api">Weather Settings</string>
+    <string name="settings_weather_api_key">OpenWeatherMap API Key</string>
+    <string name="settings_weather_api_key_hint">Enter your API key</string>
+    <string name="settings_weather_api_key_save">Save</string>
+    <string name="settings_weather_api_key_remove">Remove API Key</string>
+    
+    <!-- Weather strings -->
+    <string name="weather_loading">Loading weather...</string>
+    <string name="weather_no_api_key">No API key configured</string>
+    <string name="weather_setup_required">Weather setup required</string>
+    <string name="weather_setup_message">Configure your OpenWeatherMap API key in Settings to view weather data</string>
+    <string name="weather_go_to_settings">Go to Settings</string>
+    <string name="weather_error">Failed to load weather</string>
+    <string name="weather_refresh">Refresh</string>
+    <string name="weather_last_updated">Last updated: %1$s</string>
+    <string name="weather_feels_like">Feels like</string>
+    <string name="weather_humidity">Humidity</string>
+    <string name="weather_pressure">Pressure</string>
+    <string name="weather_wind">Wind</string>
+    <string name="weather_clouds">Clouds</string>
+    <string name="weather_visibility">Visibility</string>
+    <string name="weather_temp_range">Range</string>
     
     <!-- Map strings -->
     <string name="map_loading">Loading map...</string>
@@ -52,6 +72,13 @@
     <string name="map_search_hint">Search location</string>
     <string name="map_search_no_results">No results found</string>
     <string name="map_search_error">Search failed. Check connection.</string>
+    
+    <!-- Map settings -->
+    <string name="settings_map_zoom">Default Map Zoom</string>
+    <string name="settings_map_zoom_value_placeholder">Zoom level (1-20)</string>
+    <string name="settings_map_zoom_value">Zoom level: %1$d</string>
+    <string name="settings_map_provider">Map Provider</string>
+    <string name="settings_map_provider_description">Choose your preferred map provider</string>
     
     <!-- Google Maps API Key - Replace with your actual API key -->
     <string name="google_maps_key">DUMMY_API_KEY</string>
