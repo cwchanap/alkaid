@@ -22,11 +22,26 @@ import kotlinx.coroutines.launch
  */
 class WeatherViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val weatherRepository = WeatherRepository(application.applicationContext)
-    private val gpsRepository = GpsRepository(application.applicationContext)
-
     // Weather state
     private val _weatherState = MutableStateFlow<WeatherViewState>(WeatherViewState.CheckingApiKey)
+    
+    private val weatherRepository: WeatherRepository by lazy {
+        WeatherRepository(application.applicationContext)
+    }
+    
+    private val gpsRepository: GpsRepository by lazy {
+        GpsRepository(application.applicationContext)
+    }
+    
+    init {
+        try {
+            // Initialize the ViewModel
+            initializeViewModel()
+        } catch (e: Exception) {
+            android.util.Log.e("WeatherViewModel", "Failed to initialize repositories", e)
+            _weatherState.value = WeatherViewState.Error("Failed to initialize weather: ${e.message}")
+        }
+    }
     val weatherState: StateFlow<WeatherViewState> = _weatherState.asStateFlow()
 
     // Current location
@@ -37,12 +52,22 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
     private val _apiKeyValid = MutableStateFlow(false)
     val apiKeyValid: StateFlow<Boolean> = _apiKeyValid.asStateFlow()
 
-    init {
+    // Secondary initialization after repositories are created
+    private fun initializeViewModel() {
         try {
+            android.util.Log.d("WeatherViewModel", "Starting initialization")
             checkApiKeyAndInitialize()
+            android.util.Log.d("WeatherViewModel", "API key check completed")
             observeLocation()
+            android.util.Log.d("WeatherViewModel", "Location observation started")
         } catch (e: Exception) {
-            _weatherState.value = WeatherViewState.Error("Initialization error: ${e.message}")
+            // Log the error and show user-friendly message
+            android.util.Log.e("WeatherViewModel", "Initialization error", e)
+            try {
+                _weatherState.value = WeatherViewState.Error("Failed to initialize weather. Please try again.")
+            } catch (stateError: Exception) {
+                android.util.Log.e("WeatherViewModel", "Failed to set error state", stateError)
+            }
         }
     }
 
@@ -50,10 +75,20 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
      * Check if API key exists and initialize accordingly
      */
     private fun checkApiKeyAndInitialize() {
-        if (weatherRepository.hasApiKey()) {
-            _apiKeyValid.value = true
-            _weatherState.value = WeatherViewState.WaitingForLocation
-        } else {
+        try {
+            android.util.Log.d("WeatherViewModel", "Checking API key")
+            val hasKey = weatherRepository.hasApiKey()
+            android.util.Log.d("WeatherViewModel", "Has API key: $hasKey")
+            
+            if (hasKey) {
+                _apiKeyValid.value = true
+                _weatherState.value = WeatherViewState.WaitingForLocation
+            } else {
+                _apiKeyValid.value = false
+                _weatherState.value = WeatherViewState.NoApiKey
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("WeatherViewModel", "Error checking API key", e)
             _apiKeyValid.value = false
             _weatherState.value = WeatherViewState.NoApiKey
         }
@@ -63,31 +98,45 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
      * Start observing GPS location updates
      */
     private fun observeLocation() {
-        gpsRepository.getSensorData()
-            .onEach { sensorResult ->
-                when (sensorResult) {
-                    is SensorResult.Data<*> -> {
-                        val locationData = sensorResult.value as LocationData
-                        _currentLocation.value = locationData
-                        
-                        // Auto-fetch weather when location is available and API key exists
-                        if (_apiKeyValid.value) {
-                            fetchWeatherForLocation(locationData)
+        try {
+            android.util.Log.d("WeatherViewModel", "Starting location observation")
+            gpsRepository.getSensorData()
+                .onEach { sensorResult ->
+                    try {
+                        android.util.Log.d("WeatherViewModel", "Received sensor result: ${sensorResult::class.simpleName}")
+                        when (sensorResult) {
+                            is SensorResult.Data<*> -> {
+                                val locationData = sensorResult.value as LocationData
+                                _currentLocation.value = locationData
+                                android.util.Log.d("WeatherViewModel", "Location updated: ${locationData.latitude}, ${locationData.longitude}")
+                                
+                                // Auto-fetch weather when location is available and API key exists
+                                if (_apiKeyValid.value) {
+                                    fetchWeatherForLocation(locationData)
+                                }
+                            }
+                            is SensorResult.Error -> {
+                                android.util.Log.w("WeatherViewModel", "Location error: ${sensorResult.message}")
+                                if (_apiKeyValid.value) {
+                                    _weatherState.value = WeatherViewState.Error("Location error: ${sensorResult.message}")
+                                }
+                            }
+                            is SensorResult.Loading -> {
+                                android.util.Log.d("WeatherViewModel", "Location loading")
+                                if (_apiKeyValid.value && _weatherState.value == WeatherViewState.WaitingForLocation) {
+                                    _weatherState.value = WeatherViewState.WaitingForLocation
+                                }
+                            }
                         }
-                    }
-                    is SensorResult.Error -> {
-                        if (_apiKeyValid.value) {
-                            _weatherState.value = WeatherViewState.Error("Location error: ${sensorResult.message}")
-                        }
-                    }
-                    is SensorResult.Loading -> {
-                        if (_apiKeyValid.value && _weatherState.value == WeatherViewState.WaitingForLocation) {
-                            _weatherState.value = WeatherViewState.WaitingForLocation
-                        }
+                    } catch (e: Exception) {
+                        android.util.Log.e("WeatherViewModel", "Error processing sensor result", e)
                     }
                 }
-            }
-            .launchIn(viewModelScope)
+                .launchIn(viewModelScope)
+        } catch (e: Exception) {
+            android.util.Log.e("WeatherViewModel", "Failed to start location observation", e)
+            _weatherState.value = WeatherViewState.Error("Failed to start location tracking: ${e.message}")
+        }
     }
 
     /**

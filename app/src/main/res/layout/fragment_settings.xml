@@ -418,7 +418,9 @@
                     android:layout_height="wrap_content"
                     android:hint="@string/settings_weather_api_key_hint"
                     style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                    android:layout_marginBottom="12dp">
+                    android:layout_marginBottom="8dp"
+                    app:helperText="Get your free API key from openweathermap.org"
+                    app:helperTextEnabled="true">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/edit_weather_api_key"
@@ -429,26 +431,54 @@
 
                 </com.google.android.material.textfield.TextInputLayout>
 
+                <!-- Info text about API key -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="💡 Your API key is stored securely and only used for weather data requests"
+                    android:textAppearance="?attr/textAppearanceCaption"
+                    android:textColor="@android:color/darker_gray"
+                    android:layout_marginBottom="12dp"
+                    android:drawablePadding="8dp" />
+
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:gravity="end">
+                    android:layout_marginBottom="8dp">
 
                     <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btn_remove_weather_api_key"
-                        android:layout_width="wrap_content"
+                        android:id="@+id/btn_get_api_key"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:text="@string/settings_weather_api_key_remove"
+                        android:layout_weight="1"
+                        android:text="@string/settings_weather_get_api_key"
+                        android:drawableStart="@android:drawable/ic_menu_view"
+                        android:drawablePadding="8dp"
                         android:layout_marginEnd="8dp"
                         style="@style/Widget.Material3.Button.TextButton" />
 
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btn_save_weather_api_key"
+                    <LinearLayout
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/settings_weather_api_key_save"
-                        style="@style/Widget.Material3.Button" />
+                        android:orientation="horizontal">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_remove_weather_api_key"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/settings_weather_api_key_remove"
+                            android:layout_marginEnd="8dp"
+                            style="@style/Widget.Material3.Button.TextButton" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_save_weather_api_key"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/settings_weather_api_key_save"
+                            style="@style/Widget.Material3.Button" />
+
+                    </LinearLayout>
 
                 </LinearLayout>
 

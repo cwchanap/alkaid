@@ -47,14 +47,24 @@ class SecureStorage(private val context: Context) {
      * Get weather API key
      */
     fun getWeatherApiKey(): String? {
-        return prefs.getString(WEATHER_API_KEY, null)
+        return try {
+            prefs.getString(WEATHER_API_KEY, null)
+        } catch (e: Exception) {
+            android.util.Log.e("SecureStorage", "Error getting weather API key", e)
+            null
+        }
     }
 
     /**
      * Check if weather API key exists
      */
     fun hasWeatherApiKey(): Boolean {
-        return !getWeatherApiKey().isNullOrBlank()
+        return try {
+            !getWeatherApiKey().isNullOrBlank()
+        } catch (e: Exception) {
+            android.util.Log.e("SecureStorage", "Error checking weather API key", e)
+            false
+        }
     }
 
     /**

@@ -44,15 +44,20 @@
     <string name="settings_weather_api_key_hint">Enter your API key</string>
     <string name="settings_weather_api_key_save">Save</string>
     <string name="settings_weather_api_key_remove">Remove API Key</string>
+    <string name="settings_weather_get_api_key">Get API Key</string>
+    <string name="settings_weather_api_key_saved">API key saved successfully</string>
+    <string name="settings_weather_api_key_removed">API key removed</string>
+    <string name="settings_weather_api_key_invalid">Please enter a valid API key</string>
     
     <!-- Weather strings -->
     <string name="weather_loading">Loading weather...</string>
     <string name="weather_no_api_key">No API key configured</string>
-    <string name="weather_setup_required">Weather setup required</string>
-    <string name="weather_setup_message">Configure your OpenWeatherMap API key in Settings to view weather data</string>
+    <string name="weather_setup_required">Weather Setup Required</string>
+    <string name="weather_setup_message">To view weather data, you need to configure your OpenWeatherMap API key.\n\n1. Visit openweathermap.org\n2. Create a free account\n3. Get your API key\n4. Add it in Settings\n\nThis enables real-time weather information for your location.</string>
     <string name="weather_go_to_settings">Go to Settings</string>
     <string name="weather_error">Failed to load weather</string>
     <string name="weather_refresh">Refresh</string>
+    <string name="weather_retry">Try Again</string>
     <string name="weather_last_updated">Last updated: %1$s</string>
     <string name="weather_feels_like">Feels like</string>
     <string name="weather_humidity">Humidity</string>

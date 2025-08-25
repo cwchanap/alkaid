@@ -235,9 +235,9 @@ class SettingsFragment : Fragment() {
                 binding.editWeatherApiKey.setText("••••••••••••••••")
                 updateWeatherApiKeyButtons(true)
                 
-                Snackbar.make(binding.root, "API key saved successfully", Snackbar.LENGTH_SHORT).show()
+                Snackbar.make(binding.root, getString(R.string.settings_weather_api_key_saved), Snackbar.LENGTH_SHORT).show()
             } else {
-                Snackbar.make(binding.root, "Please enter a valid API key", Snackbar.LENGTH_SHORT).show()
+                Snackbar.make(binding.root, getString(R.string.settings_weather_api_key_invalid), Snackbar.LENGTH_SHORT).show()
             }
         }
         
@@ -250,16 +250,35 @@ class SettingsFragment : Fragment() {
                     secureStorage.removeWeatherApiKey()
                     binding.editWeatherApiKey.setText("")
                     updateWeatherApiKeyButtons(false)
-                    Snackbar.make(binding.root, "API key removed", Snackbar.LENGTH_SHORT).show()
+                    Snackbar.make(binding.root, getString(R.string.settings_weather_api_key_removed), Snackbar.LENGTH_SHORT).show()
                 }
                 .setNegativeButton("Cancel", null)
                 .show()
+        }
+        
+        // Get API Key button click listener
+        binding.btnGetApiKey.setOnClickListener {
+            openOpenWeatherMapWebsite()
         }
     }
     
     private fun updateWeatherApiKeyButtons(hasApiKey: Boolean) {
         binding.btnRemoveWeatherApiKey.visibility = if (hasApiKey) View.VISIBLE else View.GONE
         binding.btnSaveWeatherApiKey.text = if (hasApiKey) "Update" else getString(R.string.settings_weather_api_key_save)
+    }
+    
+    private fun openOpenWeatherMapWebsite() {
+        try {
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://openweathermap.org/api"))
+            startActivity(intent)
+        } catch (e: Exception) {
+            // Fallback if no browser available
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Get API Key")
+                .setMessage("Visit openweathermap.org/api to:\n\n1. Create a free account\n2. Go to API keys section\n3. Generate a new API key\n4. Copy and paste it here")
+                .setPositiveButton("OK", null)
+                .show()
+        }
     }
 
     private fun observePreferences() {

@@ -122,7 +122,12 @@ class WeatherRepository(private val context: Context) {
      * Check if API key exists
      */
     fun hasApiKey(): Boolean {
-        return secureStorage.hasWeatherApiKey()
+        return try {
+            secureStorage.hasWeatherApiKey()
+        } catch (e: Exception) {
+            android.util.Log.e("WeatherRepository", "Error checking API key", e)
+            false
+        }
     }
 
     /**
