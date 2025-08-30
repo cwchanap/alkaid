@@ -174,6 +174,26 @@ class WeatherViewModel(application: Application) : AndroidViewModel(application)
     }
 
     /**
+     * Fetch weather data for the given city
+     */
+    fun searchWeatherByCity(city: String) {
+        viewModelScope.launch {
+            weatherRepository.getWeatherByCity(city)
+                .collect { result ->
+                    _weatherState.value = when (result) {
+                        is WeatherResult.Loading -> WeatherViewState.Loading
+                        is WeatherResult.Success -> WeatherViewState.Success(result.data)
+                        is WeatherResult.Error -> WeatherViewState.Error(result.message)
+                        is WeatherResult.NoApiKey -> {
+                            _apiKeyValid.value = false
+                            WeatherViewState.NoApiKey
+                        }
+                    }
+                }
+        }
+    }
+
+    /**
      * Save API key and refresh weather data
      */
     fun saveApiKey(apiKey: String) {

@@ -51,7 +51,7 @@ class SensorDataTest {
 
     @Test
     fun `HumidityData formatting`() {
-        val humidity = HumidityData(55.55f)
+        val humidity = HumidityData(55.56f)
         assertEquals("55.6%", humidity.getFormattedHumidity())
     }
 

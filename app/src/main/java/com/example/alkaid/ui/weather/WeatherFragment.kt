@@ -193,6 +193,16 @@ class WeatherFragment : Fragment() {
                     android.util.Log.e("WeatherFragment", "Navigation error", e)
                 }
             }
+
+            // Search button
+            binding.btnSearch.setOnClickListener {
+                val city = binding.searchInputEditText.text.toString()
+                if (city.isNotBlank()) {
+                    if (::viewModel.isInitialized) {
+                        viewModel.searchWeatherByCity(city)
+                    }
+                }
+            }
         } catch (e: Exception) {
             android.util.Log.e("WeatherFragment", "Failed to setup click listeners", e)
         }
