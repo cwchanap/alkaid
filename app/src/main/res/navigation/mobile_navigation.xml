@@ -28,4 +28,10 @@
         android:name="com.example.alkaid.ui.settings.SettingsFragment"
         android:label="@string/title_settings"
         tools:layout="@layout/fragment_settings" />
+
+    <fragment
+        android:id="@+id/navigation_constellation"
+        android:name="com.example.alkaid.ui.constellation.ConstellationFragment"
+        android:label="@string/title_constellation"
+        tools:layout="@layout/fragment_constellation" />
 </navigation>
