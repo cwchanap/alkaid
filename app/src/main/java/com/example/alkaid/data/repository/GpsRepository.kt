@@ -22,24 +22,26 @@ import kotlinx.coroutines.flow.distinctUntilChanged
  * Repository for GPS location data.
  * Provides location updates including latitude, longitude, altitude, and accuracy.
  */
-open class GpsRepository(private val context: Context) : BaseSensorRepository<LocationData> {
-
-    private val fusedLocationClient: FusedLocationProviderClient = 
-        LocationServices.getFusedLocationProviderClient(context)
-
-    override fun getSensorData(): Flow<SensorResult> = callbackFlow {
-        // Check for location permissions
+open class GpsRepository(
+    private val context: Context,
+    private val fusedLocationClient: FusedLocationProviderClient =
+        LocationServices.getFusedLocationProviderClient(context),
+    private val hasLocationPermission: () -> Boolean = {
         val fineLocationPermission = ContextCompat.checkSelfPermission(
-            context, 
+            context,
             android.Manifest.permission.ACCESS_FINE_LOCATION
         )
         val coarseLocationPermission = ContextCompat.checkSelfPermission(
-            context, 
+            context,
             android.Manifest.permission.ACCESS_COARSE_LOCATION
         )
+        fineLocationPermission == PackageManager.PERMISSION_GRANTED ||
+            coarseLocationPermission == PackageManager.PERMISSION_GRANTED
+    }
+) : BaseSensorRepository<LocationData> {
 
-        if (fineLocationPermission != PackageManager.PERMISSION_GRANTED && 
-            coarseLocationPermission != PackageManager.PERMISSION_GRANTED) {
+    override fun getSensorData(): Flow<SensorResult> = callbackFlow {
+        if (!hasLocationPermission()) {
             trySend(SensorResult.Error("Location permission not granted"))
             close()
             return@callbackFlow

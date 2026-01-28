@@ -1,19 +1,16 @@
 package com.example.alkaid.data.repository
 
 import android.content.Context
-import android.content.pm.PackageManager
 import android.location.Location
+import android.location.LocationManager
 import com.example.alkaid.data.sensor.LocationData
 import com.example.alkaid.data.sensor.SensorResult
 import com.google.android.gms.location.FusedLocationProviderClient
-import com.google.android.gms.location.LocationCallback
-import com.google.android.gms.location.LocationRequest
-import com.google.android.gms.location.LocationResult
 import com.google.android.gms.tasks.OnFailureListener
 import com.google.android.gms.tasks.OnSuccessListener
 import com.google.android.gms.tasks.Task
-import android.location.LocationManager
 import androidx.test.core.app.ApplicationProvider
+import kotlinx.coroutines.flow.filterNot
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -21,11 +18,9 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
-import org.robolectric.Shadows
 import org.robolectric.annotation.Config
-import io.mockk.*
-import io.mockk.*
-import org.robolectric.shadows.ShadowLocationManager
+import io.mockk.every
+import io.mockk.mockk
 
 @RunWith(RobolectricTestRunner::class)
 @Config(manifest=Config.NONE, sdk = [28])
@@ -33,22 +28,32 @@ class GpsRepositoryTest {
 
     private lateinit var context: Context
     private lateinit var gpsRepository: GpsRepository
-    private lateinit var shadowLocationManager: ShadowLocationManager
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private lateinit var lastLocationTask: Task<Location>
+    private var hasLocationPermission: Boolean = true
 
     @Before
     fun setUp() {
         context = ApplicationProvider.getApplicationContext()
-        gpsRepository = GpsRepository(context)
-        shadowLocationManager = Shadows.shadowOf(context.getSystemService(Context.LOCATION_SERVICE) as LocationManager)
+        fusedLocationClient = mockk(relaxed = true)
+        lastLocationTask = mockk(relaxed = true)
+        every { fusedLocationClient.lastLocation } returns lastLocationTask
+        gpsRepository = GpsRepository(
+            context,
+            fusedLocationClient,
+            hasLocationPermission = { hasLocationPermission }
+        )
     }
 
     @Test
     fun `getSensorData when permission not granted should return error`() = runBlocking {
         // Given
-        shadowLocationManager.setProviderEnabled(LocationManager.GPS_PROVIDER, false)
+        hasLocationPermission = false
 
         // When
-        val result = gpsRepository.getSensorData().first()
+        val result = gpsRepository.getSensorData()
+            .filterNot { it is SensorResult.Loading }
+            .first()
 
         // Then
         assert(result is SensorResult.Error)
@@ -58,16 +63,22 @@ class GpsRepositoryTest {
     @Test
     fun `getSensorData when location is successful should return data`() = runBlocking {
         // Given
-        shadowLocationManager.setProviderEnabled(LocationManager.GPS_PROVIDER, true)
+        hasLocationPermission = true
         val location = Location(LocationManager.GPS_PROVIDER)
         location.latitude = 37.7749
         location.longitude = -122.4194
         location.altitude = 100.0
         location.accuracy = 10.0f
-        shadowLocationManager.setLastKnownLocation(LocationManager.GPS_PROVIDER, location)
+        every { lastLocationTask.addOnSuccessListener(any<OnSuccessListener<Location>>()) } answers {
+            firstArg<OnSuccessListener<Location>>().onSuccess(location)
+            lastLocationTask
+        }
+        every { lastLocationTask.addOnFailureListener(any()) } returns lastLocationTask
 
         // When
-        val result = gpsRepository.getSensorData().first()
+        val result = gpsRepository.getSensorData()
+            .filterNot { it is SensorResult.Loading }
+            .first()
 
         // Then
         assert(result is SensorResult.Data<*>)
@@ -81,15 +92,20 @@ class GpsRepositoryTest {
     @Test
     fun `getSensorData when location fails should return error`() = runBlocking {
         // Given
-        shadowLocationManager.setProviderEnabled(LocationManager.GPS_PROVIDER, true)
-        shadowLocationManager.setLastKnownLocation(LocationManager.GPS_PROVIDER, null)
+        hasLocationPermission = true
+        every { lastLocationTask.addOnSuccessListener(any<OnSuccessListener<Location>>()) } returns lastLocationTask
+        every { lastLocationTask.addOnFailureListener(any<OnFailureListener>()) } answers {
+            firstArg<OnFailureListener>().onFailure(Exception("Location unavailable"))
+            lastLocationTask
+        }
 
         // When
-        val result = gpsRepository.getSensorData().first()
+        val result = gpsRepository.getSensorData()
+            .filterNot { it is SensorResult.Loading }
+            .first()
 
         // Then
         assert(result is SensorResult.Error)
-        assertEquals("Failed to get location: last known location is null", (result as SensorResult.Error).message)
+        assertEquals("Failed to get location: Location unavailable", (result as SensorResult.Error).message)
     }
 }
-
