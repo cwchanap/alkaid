@@ -41,7 +41,7 @@
                     android:layout_height="24dp"
                     android:layout_marginEnd="16dp"
                     android:contentDescription="@string/sensor_barometer"
-                    android:src="@drawable/ic_home_black_24dp" />
+                    android:src="@drawable/ic_sensor_barometer" />
 
                 <TextView
                     android:layout_width="0dp"
@@ -121,7 +121,7 @@
                     android:layout_height="24dp"
                     android:layout_marginEnd="16dp"
                     android:contentDescription="@string/sensor_gyroscope"
-                    android:src="@drawable/ic_settings_black_24dp" />
+                    android:src="@drawable/ic_sensor_gyroscope" />
 
                 <TextView
                     android:layout_width="0dp"
@@ -159,7 +159,7 @@
                     android:layout_height="24dp"
                     android:layout_marginEnd="16dp"
                     android:contentDescription="@string/sensor_temperature"
-                    android:src="@drawable/ic_home_black_24dp" />
+                    android:src="@drawable/ic_sensor_temperature" />
 
                 <TextView
                     android:layout_width="0dp"
@@ -197,7 +197,7 @@
                     android:layout_height="24dp"
                     android:layout_marginEnd="16dp"
                     android:contentDescription="@string/sensor_gps"
-                    android:src="@drawable/ic_map_black_24dp" />
+                    android:src="@drawable/ic_sensor_gps" />
 
                 <TextView
                     android:layout_width="0dp"
@@ -235,7 +235,7 @@
                     android:layout_height="24dp"
                     android:layout_marginEnd="16dp"
                     android:contentDescription="@string/sensor_accelerometer"
-                    android:src="@drawable/ic_home_black_24dp" />
+                    android:src="@drawable/ic_sensor_accelerometer" />
 
                 <TextView
                     android:layout_width="0dp"
@@ -273,7 +273,7 @@
                     android:layout_height="24dp"
                     android:layout_marginEnd="16dp"
                     android:contentDescription="@string/sensor_magnetometer"
-                    android:src="@drawable/ic_map_black_24dp" />
+                    android:src="@drawable/ic_sensor_magnetometer" />
 
                 <TextView
                     android:layout_width="0dp"
@@ -311,7 +311,7 @@
                     android:layout_height="24dp"
                     android:layout_marginEnd="16dp"
                     android:contentDescription="@string/sensor_light"
-                    android:src="@drawable/ic_home_black_24dp" />
+                    android:src="@drawable/ic_sensor_light" />
 
                 <TextView
                     android:layout_width="0dp"
@@ -349,7 +349,7 @@
                     android:layout_height="24dp"
                     android:layout_marginEnd="16dp"
                     android:contentDescription="@string/sensor_humidity"
-                    android:src="@drawable/ic_settings_black_24dp" />
+                    android:src="@drawable/ic_sensor_humidity" />
 
                 <TextView
                     android:layout_width="0dp"
