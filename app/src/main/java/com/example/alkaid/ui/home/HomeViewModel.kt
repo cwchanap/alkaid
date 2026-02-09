@@ -40,6 +40,7 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
     private var gpsObservationStarted = false
+    private var visibleSensorsObservationStarted = false
 
     fun startObserving() {
         observeVisibleSensors()
@@ -47,6 +48,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private fun observeVisibleSensors() {
+        if (visibleSensorsObservationStarted) return
+        visibleSensorsObservationStarted = true
+
         sensorPreferences.getVisibleSensorsFlow()
             .onEach { visibleSensors ->
                 _uiState.value = _uiState.value.copy(

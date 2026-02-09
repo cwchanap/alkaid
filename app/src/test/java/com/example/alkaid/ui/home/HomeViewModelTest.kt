@@ -92,11 +92,16 @@ class HomeViewModelTest {
 
     @Test
     fun `visible sensors flow filters out GPS`() = runTest {
-        sensorPreferences.resetToDefaults()
+        // Enable only GPS and barometer
+        SensorType.values().forEach { sensorPreferences.setSensorVisible(it, false) }
+        sensorPreferences.setSensorVisible(SensorType.GPS, true)
+        sensorPreferences.setSensorVisible(SensorType.BAROMETER, true)
 
         viewModel.startObserving()
 
         val state = viewModel.uiState.value
+        // GPS should be filtered out from the grid list (only barometer should be visible)
         assertTrue(SensorType.GPS !in state.visibleSensors)
+        assertTrue(SensorType.BAROMETER in state.visibleSensors)
     }
 }
