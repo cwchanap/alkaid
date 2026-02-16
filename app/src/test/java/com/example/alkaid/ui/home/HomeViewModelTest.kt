@@ -93,7 +93,7 @@ class HomeViewModelTest {
     @Test
     fun `visible sensors flow filters out GPS`() = runTest {
         // Enable only GPS and barometer
-        SensorType.values().forEach { sensorPreferences.setSensorVisible(it, false) }
+        SensorType.entries.forEach { sensorPreferences.setSensorVisible(it, false) }
         sensorPreferences.setSensorVisible(SensorType.GPS, true)
         sensorPreferences.setSensorVisible(SensorType.BAROMETER, true)
 

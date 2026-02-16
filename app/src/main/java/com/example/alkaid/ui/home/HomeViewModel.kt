@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.update
 
 class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
@@ -53,9 +54,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
 
         sensorPreferences.getVisibleSensorsFlow()
             .onEach { visibleSensors ->
-                _uiState.value = _uiState.value.copy(
-                    visibleSensors = visibleSensors.filter { it != SensorType.GPS }
-                )
+                _uiState.update { current ->
+                    current.copy(visibleSensors = visibleSensors.filter { it != SensorType.GPS })
+                }
             }
             .launchIn(viewModelScope)
     }
@@ -67,7 +68,9 @@ class HomeViewModel(application: Application) : AndroidViewModel(application) {
         val gpsRepo = sensorRepositories[SensorType.GPS] ?: return
         gpsRepo.getSensorData()
             .onEach { result ->
-                _uiState.value = _uiState.value.copy(gpsResult = result)
+                _uiState.update { current ->
+                    current.copy(gpsResult = result)
+                }
             }
             .launchIn(viewModelScope)
     }
