@@ -209,7 +209,7 @@ This PRD covers 10 features organized into three phases: architectural foundatio
 
 ## Implementation Order
 
-```
+```text
 Phase 1 (Foundations)          Phase 2 (Infrastructure)       Phase 3 (Features)
 ──────────────────────         ────────────────────────        ──────────────────
 F1. ViewModel Refactor    →    F3. Hilt DI              →     F6. Weather Forecast
