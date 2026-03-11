@@ -23,8 +23,9 @@ class WeatherDataTest {
     // ---- MainWeatherData ----
 
     @Test
-    fun `getFormattedTemperature returns degrees Celsius`() {
-        val main = MainWeatherData(22.7, 21.0, 18.0, 25.0, 1013, 60)
+    fun `getFormattedTemperature truncates to whole degrees Celsius`() {
+        // toInt() truncates toward zero, so 22.7 → 22 and 22.9 → 22 (not rounded up to 23)
+        val main = MainWeatherData(22.9, 21.0, 18.0, 25.0, 1013, 60)
         assertEquals("22°C", main.getFormattedTemperature())
     }
 

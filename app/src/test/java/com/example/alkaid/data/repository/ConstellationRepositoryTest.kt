@@ -41,7 +41,7 @@ class ConstellationRepositoryTest {
         orion.stars.forEach { star ->
             assertTrue(
                 "Star ${star.name} RA ${star.ra} should be in range [0, 24)",
-                star.ra in 0.0..24.0
+                star.ra >= 0.0 && star.ra < 24.0
             )
         }
     }
