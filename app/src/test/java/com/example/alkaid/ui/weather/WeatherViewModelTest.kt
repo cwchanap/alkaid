@@ -2,6 +2,7 @@ package com.example.alkaid.ui.weather
 
 import android.app.Application
 import androidx.test.core.app.ApplicationProvider
+import com.example.alkaid.data.security.SecureStorage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -10,6 +11,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -29,11 +31,16 @@ class WeatherViewModelTest {
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         application = ApplicationProvider.getApplicationContext()
+        // Clear any API key persisted from a previous test before creating the ViewModel
+        // so that initial-state assertions are always deterministic.
+        SecureStorage(application).clearAll()
         viewModel = WeatherViewModel(application)
     }
 
     @After
     fun tearDown() {
+        // Remove any API key saved during the test to avoid cross-test pollution.
+        SecureStorage(application).clearAll()
         Dispatchers.resetMain()
     }
 
@@ -86,10 +93,7 @@ class WeatherViewModelTest {
     @Test
     fun `saveApiKey with valid key sets apiKeyValid to true`() {
         viewModel.saveApiKey("test_api_key_12345")
-        // After saving a non-blank key, apiKeyValid should become true
-        assert(viewModel.apiKeyValid.value) {
-            "apiKeyValid should be true after saving a non-blank key"
-        }
+        assertTrue("apiKeyValid should be true after saving a non-blank key", viewModel.apiKeyValid.value)
     }
 
     @Test

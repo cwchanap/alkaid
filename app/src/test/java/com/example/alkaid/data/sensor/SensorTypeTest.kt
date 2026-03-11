@@ -3,6 +3,7 @@ package com.example.alkaid.data.sensor
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class SensorTypeTest {
@@ -28,9 +29,7 @@ class SensorTypeTest {
     fun `all sensor types have non-empty display names`() {
         SensorType.values().forEach { sensorType ->
             assertNotNull(sensorType.displayName)
-            assert(sensorType.displayName.isNotEmpty()) {
-                "$sensorType should have a non-empty display name"
-            }
+            assertTrue("$sensorType should have a non-empty display name", sensorType.displayName.isNotEmpty())
         }
     }
 
@@ -38,9 +37,7 @@ class SensorTypeTest {
     fun `all sensor types have non-empty units`() {
         SensorType.values().forEach { sensorType ->
             assertNotNull(sensorType.unit)
-            assert(sensorType.unit.isNotEmpty()) {
-                "$sensorType should have a non-empty unit"
-            }
+            assertTrue("$sensorType should have a non-empty unit", sensorType.unit.isNotEmpty())
         }
     }
 
