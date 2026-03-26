@@ -5,6 +5,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.alkaid.data.astronomy.Constellation
+import com.example.alkaid.data.repository.BaseSensorRepository
 import com.example.alkaid.data.repository.ConstellationRepository
 import com.example.alkaid.data.repository.GpsRepository
 import com.example.alkaid.data.sensor.LocationData
@@ -15,10 +16,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 
-class ConstellationViewModel(application: Application) : AndroidViewModel(application) {
-
-    private val constellationRepository = ConstellationRepository()
-    private val gpsRepository = GpsRepository(application.applicationContext)
+class ConstellationViewModel(
+    application: Application,
+    private val constellationRepository: ConstellationRepository = ConstellationRepository(),
+    private val gpsRepository: BaseSensorRepository<LocationData> =
+        GpsRepository(application.applicationContext)
+) : AndroidViewModel(application) {
 
     private val _constellations = MutableStateFlow<List<Constellation>>(emptyList())
     val constellations: StateFlow<List<Constellation>> = _constellations.asStateFlow()
