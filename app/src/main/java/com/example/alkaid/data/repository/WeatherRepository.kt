@@ -4,7 +4,6 @@ import android.content.Context
 import com.example.alkaid.data.security.SecureStorage
 import com.example.alkaid.data.weather.WeatherApiService
 import com.example.alkaid.data.weather.WeatherDisplayData
-import com.example.alkaid.data.weather.WeatherResponse
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import okhttp3.OkHttpClient
@@ -12,32 +11,45 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
-/**
- * Repository for weather data from OpenWeatherMap API
- */
-class WeatherRepository(private val context: Context) {
+class WeatherRepository(
+    context: Context,
+    private val secureStorage: SecureStorage = SecureStorage(context),
+    private val weatherApiService: WeatherApiService = createWeatherApiService(),
+    private val networkAvailable: () -> Boolean = { isNetworkAvailable(context) }
+) {
 
     companion object {
         private const val BASE_URL = "https://api.openweathermap.org/data/2.5/"
+
+        private fun createWeatherApiService(): WeatherApiService {
+            val loggingInterceptor = HttpLoggingInterceptor().apply {
+                level = HttpLoggingInterceptor.Level.BASIC
+            }
+
+            val httpClient = OkHttpClient.Builder()
+                .addInterceptor(loggingInterceptor)
+                .build()
+
+            val retrofit = Retrofit.Builder()
+                .baseUrl(BASE_URL)
+                .client(httpClient)
+                .addConverterFactory(GsonConverterFactory.create())
+                .build()
+
+            return retrofit.create(WeatherApiService::class.java)
+        }
+
+        private fun isNetworkAvailable(context: Context): Boolean {
+            return try {
+                val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE)
+                    as android.net.ConnectivityManager
+                val networkInfo = connectivityManager.activeNetworkInfo
+                networkInfo?.isConnected == true
+            } catch (e: Exception) {
+                false
+            }
+        }
     }
-
-    private val secureStorage = SecureStorage(context)
-    
-    private val loggingInterceptor = HttpLoggingInterceptor().apply {
-        level = HttpLoggingInterceptor.Level.BASIC
-    }
-    
-    private val httpClient = OkHttpClient.Builder()
-        .addInterceptor(loggingInterceptor)
-        .build()
-
-    private val retrofit = Retrofit.Builder()
-        .baseUrl(BASE_URL)
-        .client(httpClient)
-        .addConverterFactory(GsonConverterFactory.create())
-        .build()
-
-    private val weatherApiService = retrofit.create(WeatherApiService::class.java)
 
     /**
      * Get weather data by coordinates
@@ -71,7 +83,7 @@ class WeatherRepository(private val context: Context) {
                 e.message?.contains("401") == true -> "Invalid API key"
                 e.message?.contains("404") == true -> "Location not found"
                 e.message?.contains("429") == true -> "API rate limit exceeded"
-                !isNetworkAvailable() -> "No internet connection"
+                !networkAvailable() -> "No internet connection"
                 else -> "Failed to get weather data: ${e.message}"
             }
             emit(WeatherResult.Error(errorMessage))
@@ -104,7 +116,7 @@ class WeatherRepository(private val context: Context) {
                 e.message?.contains("401") == true -> "Invalid API key"
                 e.message?.contains("404") == true -> "City not found"
                 e.message?.contains("429") == true -> "API rate limit exceeded"
-                !isNetworkAvailable() -> "No internet connection"
+                !networkAvailable() -> "No internet connection"
                 else -> "Failed to get weather data: ${e.message}"
             }
             emit(WeatherResult.Error(errorMessage))
@@ -137,19 +149,6 @@ class WeatherRepository(private val context: Context) {
         secureStorage.removeWeatherApiKey()
     }
 
-    /**
-     * Simple network availability check
-     */
-    private fun isNetworkAvailable(): Boolean {
-        return try {
-            val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) 
-                    as android.net.ConnectivityManager
-            val networkInfo = connectivityManager.activeNetworkInfo
-            networkInfo?.isConnected == true
-        } catch (e: Exception) {
-            false
-        }
-    }
 }
 
 /**
