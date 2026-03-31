@@ -1,6 +1,7 @@
 package com.example.alkaid.data.repository
 
 import android.content.Context
+import android.util.Log
 import com.example.alkaid.data.security.SecureStorage
 import com.example.alkaid.data.weather.WeatherApiService
 import com.example.alkaid.data.weather.WeatherDisplayData
@@ -20,6 +21,7 @@ class WeatherRepository(
 
     companion object {
         private const val BASE_URL = "https://api.openweathermap.org/data/2.5/"
+        private const val TAG = "WeatherRepository"
 
         private fun createWeatherApiService(): WeatherApiService {
             val loggingInterceptor = HttpLoggingInterceptor().apply {
@@ -46,6 +48,7 @@ class WeatherRepository(
                 val networkInfo = connectivityManager.activeNetworkInfo
                 networkInfo?.isConnected == true
             } catch (e: Exception) {
+                Log.e(TAG, "isNetworkAvailable failed while checking connectivity", e)
                 false
             }
         }
@@ -137,7 +140,7 @@ class WeatherRepository(
         return try {
             secureStorage.hasWeatherApiKey()
         } catch (e: Exception) {
-            android.util.Log.e("WeatherRepository", "Error checking API key", e)
+            Log.e(TAG, "hasApiKey failed while checking stored API key", e)
             false
         }
     }

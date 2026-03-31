@@ -18,6 +18,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -115,5 +116,12 @@ class ConstellationViewModelTest {
         gpsFlow.value = SensorResult.Error("gps unavailable")
 
         assertEquals(location, viewModel.location.value)
+    }
+
+    @Test
+    fun `view model exposes application only constructor for default factory`() {
+        val constructor = ConstellationViewModel::class.java.getConstructor(Application::class.java)
+
+        assertNotNull(constructor)
     }
 }

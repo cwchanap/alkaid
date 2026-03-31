@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 
-class ConstellationViewModel(
+class ConstellationViewModel @JvmOverloads constructor(
     application: Application,
     private val constellationRepository: ConstellationRepository = ConstellationRepository(),
     private val gpsRepository: BaseSensorRepository<LocationData> =

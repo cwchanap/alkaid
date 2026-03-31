@@ -10,7 +10,7 @@ import io.mockk.mockk
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -18,7 +18,7 @@ import org.junit.Test
 class SensorRepositoriesTest {
 
     @Test
-    fun `repositories emit sensor unavailable errors when sensor is missing`() = runBlocking {
+    fun `repositories emit sensor unavailable errors when sensor is missing`() = runTest {
         assertUnavailable(
             repository = AccelerometerRepository(createContext(sensorType = Sensor.TYPE_ACCELEROMETER)),
             expectedMessage = "Accelerometer sensor not available"
@@ -50,7 +50,7 @@ class SensorRepositoriesTest {
     }
 
     @Test
-    fun `repositories emit registration failure errors when listener registration fails`() = runBlocking {
+    fun `repositories emit registration failure errors when listener registration fails`() = runTest {
         assertRegistrationFailure(
             repository = AccelerometerRepository(
                 createContext(
