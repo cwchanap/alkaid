@@ -1,6 +1,7 @@
 package com.example.alkaid.data.repository
 
 import android.content.Context
+import android.net.ConnectivityManager
 import androidx.test.core.app.ApplicationProvider
 import com.example.alkaid.data.security.SecureStorage
 import com.example.alkaid.data.weather.WeatherApiService
@@ -27,6 +28,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.shadows.ShadowLog
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -216,6 +218,38 @@ class WeatherRepositoryTest {
             listOf(WeatherResult.Loading, WeatherResult.Error("No internet connection")),
             results
         )
+    }
+
+    @Test
+    fun `weather requests log network availability failures before returning no internet`() = runTest {
+        every { secureStorage.getWeatherApiKey() } returns "api-key"
+        coEvery {
+            weatherApiService.getCurrentWeather(any(), any(), any(), any())
+        } throws Exception("timeout")
+        val connectivityFailure = IllegalStateException("connectivity unavailable")
+        val connectivityManager = mockk<ConnectivityManager>()
+        val failingContext = mockk<Context>()
+        every { failingContext.getSystemService(Context.CONNECTIVITY_SERVICE) } returns connectivityManager
+        every { connectivityManager.activeNetworkInfo } throws connectivityFailure
+        ShadowLog.clear()
+
+        val repository = WeatherRepository(
+            context = failingContext,
+            secureStorage = secureStorage,
+            weatherApiService = weatherApiService
+        )
+
+        val results = repository.getWeatherByCoordinates(35.0, 139.0).toList()
+        val logs = ShadowLog.getLogsForTag("WeatherRepository")
+
+        assertEquals(
+            listOf(WeatherResult.Loading, WeatherResult.Error("No internet connection")),
+            results
+        )
+        assertTrue(logs.any {
+            it.msg.contains("isNetworkAvailable") &&
+                it.throwable === connectivityFailure
+        })
     }
 
     @Test
